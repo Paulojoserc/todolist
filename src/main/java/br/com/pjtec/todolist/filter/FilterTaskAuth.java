@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class FilterTaskAuth extends OncePerRequestFilter {
-	
+
 	@Autowired
 	private UserRepository userRepository;
 
@@ -24,39 +24,42 @@ public class FilterTaskAuth extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 
-		//O que p Once per Request Filter faz.
-		
-		
-		//Ele pegar a autenticação (usuario e senha)
-		var authorization = request.getHeader("Authorization");
-		
-		
-		var authEncoded = authorization.substring("Basic".length()).trim();
-		
-		byte[] authDecode = Base64.getDecoder().decode(authEncoded);
-		var authString = new String(authDecode);
-		
-		
-		
-		String[] credentials = authString.split(":");
-		String username = credentials[0];
-		String password = credentials[1];
-		// Validar usuário
-		var user = this.userRepository.findByUserName(username);
-		if (user == null) {
-			response.sendError(401, "Usuário sem autorização ou não existe!");
+		var servletPath = request.getServletPath();
+		if (servletPath.equals("/tasks/")) {
+
+			// O que p Once per Request Filter faz.
+
+			// Ele pegar a autenticação (usuario e senha)
+			var authorization = request.getHeader("Authorization");
+
+			var authEncoded = authorization.substring("Basic".length()).trim();
+
+			byte[] authDecode = Base64.getDecoder().decode(authEncoded);
+			var authString = new String(authDecode);
+
+			String[] credentials = authString.split(":");
+			String username = credentials[0];
+			String password = credentials[1];
+			// Validar usuário
+			var user = this.userRepository.findByUserName(username);
+			if (user == null) {
+				response.sendError(401, "Usuário sem autorização ou não existe!");
+			} else {
+				// Validar senha
+				var passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
+				if (passwordVerify.verified) {
+					// E dar acesso caso exista usuario
+					request.setAttribute("idUser", user.getId());
+					filterChain.doFilter(request, response);
+				} else {
+					response.sendError(401);
+				}
+				
+
+			}
 		}else {
-			 // Validar senha
-		var passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
-		if(passwordVerify.verified) {
 			filterChain.doFilter(request, response);
-		}else {
-			response.sendError(401);
 		}
-			 // E dar acesso caso exista usuario
-			 
-		}
-		
 
 	}
 
