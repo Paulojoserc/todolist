@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.pjtec.todolist.utils.Utils;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
@@ -23,39 +24,45 @@ public class TaskController {
 
 	@Autowired
 	private ITaskRepository taskRepository;
-	
+
 	@PostMapping("/")
 	public ResponseEntity create(@RequestBody TaskModel taskModel, HttpServletRequest request) {
-		//System.out.println("Chegou no controlller ");
+		// System.out.println("Chegou no controlller ");
 		var idUser = request.getAttribute("idUser");
 		taskModel.setIdUser((UUID) idUser);
-		
-		//validar a data atual 
+
+		// validar a data atual
 		var currentDate = LocalDateTime.now();
-		//10/11/2023 -Current
-		//10/10/2023 -startAt
-		if(currentDate.isAfter(taskModel.getStartAt()) || currentDate.isAfter(taskModel.getEndAt())) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("A data de início / data de término deve ser maior do que a data atual");
+		// 10/11/2023 -Current
+		// 10/10/2023 -startAt
+		if (currentDate.isAfter(taskModel.getStartAt()) || currentDate.isAfter(taskModel.getEndAt())) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body("A data de início / data de término deve ser maior do que a data atual");
 		}
-		//Verificar que a data de inicio é antes da data de termino 
-		if(taskModel.getStartAt().isAfter(taskModel.getEndAt())) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("A data de início deve ser menor do que a data de término");
+		// Verificar que a data de inicio é antes da data de termino
+		if (taskModel.getStartAt().isAfter(taskModel.getEndAt())) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body("A data de início deve ser menor do que a data de término");
 		}
-		
+
 		var task = this.taskRepository.save(taskModel);
 		return ResponseEntity.status(HttpStatus.OK).body(task);
 	}
+
 	@GetMapping("/")
 	public List<TaskModel> list(HttpServletRequest request) {
 		var idUser = request.getAttribute("idUser");
 		var tasks = this.taskRepository.findByIdUser((UUID) idUser);
 		return tasks;
 	}
+
 	@PutMapping("/{id}")
 	public TaskModel update(@RequestBody TaskModel taskModel, HttpServletRequest request, @PathVariable UUID id) {
-		var idUser = request.getAttribute("idUser");
-		taskModel.setIdUser((UUID) idUser);
-		taskModel.setId(id);
-	 return	this.taskRepository.save(taskModel);
+
+		var task = this.taskRepository.findById(id).orElse(null);
+
+		Utils.copyNonNullProperties(taskModel, task);
+
+		return this.taskRepository.save(task);
 	}
 }
