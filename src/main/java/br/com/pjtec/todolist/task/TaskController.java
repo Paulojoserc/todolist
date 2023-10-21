@@ -22,59 +22,62 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("/tasks")
 public class TaskController {
 
-	@Autowired
-	private ITaskRepository taskRepository;
+    @Autowired
+    private ITaskRepository taskRepository;
 
-	@PostMapping("/")
-	public ResponseEntity create(@RequestBody TaskModel taskModel, HttpServletRequest request) {
-		// System.out.println("Chegou no controlller ");
-		var idUser = request.getAttribute("idUser");
-		taskModel.setIdUser((UUID) idUser);
+    @PostMapping("/")
+    public ResponseEntity create(@RequestBody TaskModel taskModel, HttpServletRequest request) {
+        var idUser = request.getAttribute("idUser");
+        taskModel.setIdUser((UUID) idUser);
 
-		// validar a data atual
-		var currentDate = LocalDateTime.now();
-		// 10/11/2023 -Current
-		// 10/10/2023 -startAt
-		if (currentDate.isAfter(taskModel.getStartAt()) || currentDate.isAfter(taskModel.getEndAt())) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-					.body("A data de início / data de término deve ser maior do que a data atual");
-		}
-		// Verificar que a data de inicio é antes da data de termino
-		if (taskModel.getStartAt().isAfter(taskModel.getEndAt())) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-					.body("A data de início deve ser menor do que a data de término");
-		}
+        var currentDate = LocalDateTime.now();
+        // 10/11/2023 - Current
+        // 10/10/2023 - startAt
+        if (currentDate.isAfter(taskModel.getStartAt()) || currentDate.isAfter(taskModel.getEndAt())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("A data de início / data de término deve ser maior do que a data atual");
+        }
 
-		var task = this.taskRepository.save(taskModel);
-		return ResponseEntity.status(HttpStatus.OK).body(task);
-	}
+        if (taskModel.getStartAt().isAfter(taskModel.getEndAt())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("A data de início deve ser menor do que a data de término");
+        }
 
-	@GetMapping("/")
-	public List<TaskModel> list(HttpServletRequest request) {
-		var idUser = request.getAttribute("idUser");
-		var tasks = this.taskRepository.findByIdUser((UUID) idUser);
-		return tasks;
-	}
+        var task = this.taskRepository.save(taskModel);
+        return ResponseEntity.status(HttpStatus.OK).body(task);
 
-	@PutMapping("/{id}")
-	public ResponseEntity update(@RequestBody TaskModel taskModel, HttpServletRequest request, @PathVariable UUID id) {
+    }
 
-		var task = this.taskRepository.findById(id).orElse(null);
-		
-		if(task == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tarefa não encontrada");
-		}
-		
-		var idUser =  request.getAttribute("idUser");
-		
-		if(!task.getIdUser().equals(idUser)){
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuário não tem permissão para alterar essa tarefa");
-		}
-		
-		Utils.copyNonNullProperties(taskModel, task);
-		
-		var taskUpdated = this.taskRepository.save(task);
+    @GetMapping("/")
+    public List<TaskModel> list(HttpServletRequest request) {
+        var idUser = request.getAttribute("idUser");
+        var tasks = this.taskRepository.findByIdUser((UUID) idUser);
+        return tasks;
+    }
 
-		return ResponseEntity.ok().body(this.taskRepository.save(taskUpdated));
-	}
+    // http://localhost:8080/tasks/892347823-cdfgcvb-832748234
+    @PutMapping("/{id}")
+    public ResponseEntity update(@RequestBody TaskModel taskModel, @PathVariable UUID id,
+            HttpServletRequest request) {
+        var task = this.taskRepository.findById(id).orElse(null);
+
+        if (task == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Tarefa não encontrada");
+        }
+
+        var idUser = request.getAttribute("idUser");
+
+        if (!task.getIdUser().equals(idUser)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Usuário não tem permissão para alterar essa tarefa");
+        }
+
+        Utils.copyNonNullProperties(taskModel, task);
+
+        var taskUpdated = this.taskRepository.save(task);
+        return ResponseEntity.ok().body(this.taskRepository.save(taskUpdated));
+
+    }
+
 }

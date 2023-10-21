@@ -14,17 +14,17 @@ import lombok.Data;
 @Data
 @Entity(name = "tb_users")
 public class UserModel {
-	
-	@Id
-	@GeneratedValue(generator = "UUID")
-	private UUID id;
-	
-	@Column(unique = true)
-	private String userName;
-	private String name;
-	private String password;
-	
-	@CreationTimestamp
-	private LocalDateTime createdAt;
-	
+
+    @Id
+    @GeneratedValue(generator = "UUID")
+    private UUID id;
+
+    @Column(unique = true)
+    private String username;
+    private String name;
+    private String password;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
 }

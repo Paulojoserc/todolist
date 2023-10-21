@@ -10,27 +10,35 @@ import org.springframework.web.bind.annotation.RestController;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 
+/**
+ * Modificador
+ * public
+ * private
+ * protected
+ */
 @RestController
 @RequestMapping("/users")
 public class UserController {
-	
-	@Autowired
-	private UserRepository userRepository;
-	@PostMapping("/")
-	public ResponseEntity create(@RequestBody UserModel userModel) {
-		//System.out.println(userModel.getName());
-		var user = this.userRepository.findByUserName(userModel.getUserName());
-		if(user != null) {
-			//System.out.println("Usuario Já existeS");
-			//Mensagem de erro
-			//Status Code
-			
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario Já existeS");
-		}
-		var passwordHashred =  BCrypt.withDefaults().hashToString(12, userModel.getPassword().toCharArray());
-		
-		userModel.setPassword(passwordHashred);
-		var userCreated = this.userRepository.save(userModel);
-		return ResponseEntity.status(HttpStatus.CREATED).body(userCreated);
-	}
+
+    @Autowired
+    private IUserRepository userRepository;
+
+    @PostMapping("/")
+    public ResponseEntity create(@RequestBody UserModel userModel) {
+        var user = this.userRepository.findByUsername(userModel.getUsername());
+
+        if (user != null) {
+            // Mensagem de erro
+            // Status Code
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuário já existe");
+        }
+
+        var passwordHashred = BCrypt.withDefaults()
+                .hashToString(12, userModel.getPassword().toCharArray());
+
+        userModel.setPassword(passwordHashred);
+
+        var userCreated = this.userRepository.save(userModel);
+        return ResponseEntity.status(HttpStatus.OK).body(userCreated);
+    }
 }
